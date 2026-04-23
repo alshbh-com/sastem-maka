@@ -108,28 +108,37 @@ export type Database = {
       }
       agent_daily_closings: {
         Row: {
+          closed_by: string | null
+          closed_by_username: string | null
           closing_date: string
           created_at: string
           delivery_agent_id: string | null
           id: string
+          net_amount: number
           notes: string | null
           total_amount: number
           total_orders: number
         }
         Insert: {
+          closed_by?: string | null
+          closed_by_username?: string | null
           closing_date?: string
           created_at?: string
           delivery_agent_id?: string | null
           id?: string
+          net_amount?: number
           notes?: string | null
           total_amount?: number
           total_orders?: number
         }
         Update: {
+          closed_by?: string | null
+          closed_by_username?: string | null
           closing_date?: string
           created_at?: string
           delivery_agent_id?: string | null
           id?: string
+          net_amount?: number
           notes?: string | null
           total_amount?: number
           total_orders?: number
@@ -558,6 +567,7 @@ export type Database = {
           governorate_id: string | null
           id: string
           is_shipping_included: boolean
+          modified_amount: number | null
           notes: string | null
           order_details: string | null
           order_number: number
@@ -576,6 +586,7 @@ export type Database = {
           governorate_id?: string | null
           id?: string
           is_shipping_included?: boolean
+          modified_amount?: number | null
           notes?: string | null
           order_details?: string | null
           order_number?: number
@@ -594,6 +605,7 @@ export type Database = {
           governorate_id?: string | null
           id?: string
           is_shipping_included?: boolean
+          modified_amount?: number | null
           notes?: string | null
           order_details?: string | null
           order_number?: number
@@ -882,7 +894,9 @@ export type Database = {
       treasury: {
         Row: {
           amount: number
+          category: string | null
           created_at: string
+          created_by: string | null
           description: string | null
           id: string
           notes: string | null
@@ -891,7 +905,9 @@ export type Database = {
         }
         Insert: {
           amount?: number
+          category?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           notes?: string | null
@@ -900,7 +916,9 @@ export type Database = {
         }
         Update: {
           amount?: number
+          category?: string | null
           created_at?: string
+          created_by?: string | null
           description?: string | null
           id?: string
           notes?: string | null
