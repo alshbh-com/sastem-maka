@@ -257,6 +257,7 @@ export type Database = {
       cashbox: {
         Row: {
           created_at: string
+          created_by: string | null
           id: string
           is_active: boolean
           name: string
@@ -265,6 +266,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -273,6 +275,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          created_by?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -290,7 +293,10 @@ export type Database = {
           id: string
           notes: string | null
           payment_method: string
+          reason: string | null
           type: string
+          user_id: string | null
+          username: string | null
         }
         Insert: {
           amount?: number
@@ -300,7 +306,10 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string
+          reason?: string | null
           type: string
+          user_id?: string | null
+          username?: string | null
         }
         Update: {
           amount?: number
@@ -310,7 +319,10 @@ export type Database = {
           id?: string
           notes?: string | null
           payment_method?: string
+          reason?: string | null
           type?: string
+          user_id?: string | null
+          username?: string | null
         }
         Relationships: [
           {
@@ -325,25 +337,31 @@ export type Database = {
       categories: {
         Row: {
           created_at: string
+          description: string | null
           display_order: number
           id: string
           image_url: string | null
+          is_active: boolean
           name: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          description?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
+          is_active?: boolean
           name: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          description?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
+          is_active?: boolean
           name?: string
           updated_at?: string
         }
@@ -450,6 +468,7 @@ export type Database = {
           address: string | null
           created_at: string
           id: string
+          is_active: boolean
           logo_url: string | null
           name: string
           phone: string | null
@@ -459,6 +478,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           logo_url?: string | null
           name: string
           phone?: string | null
@@ -468,6 +488,7 @@ export type Database = {
           address?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           logo_url?: string | null
           name?: string
           phone?: string | null
@@ -675,6 +696,7 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
+          color_options: string[] | null
           colors: string[] | null
           created_at: string
           description: string | null
@@ -687,12 +709,14 @@ export type Database = {
           offer_price: number | null
           price: number
           quantity_pricing: Json | null
+          size_options: string[] | null
           sizes: string[] | null
           stock: number
           updated_at: string
         }
         Insert: {
           category_id?: string | null
+          color_options?: string[] | null
           colors?: string[] | null
           created_at?: string
           description?: string | null
@@ -705,12 +729,14 @@ export type Database = {
           offer_price?: number | null
           price?: number
           quantity_pricing?: Json | null
+          size_options?: string[] | null
           sizes?: string[] | null
           stock?: number
           updated_at?: string
         }
         Update: {
           category_id?: string | null
+          color_options?: string[] | null
           colors?: string[] | null
           created_at?: string
           description?: string | null
@@ -723,6 +749,7 @@ export type Database = {
           offer_price?: number | null
           price?: number
           quantity_pricing?: Json | null
+          size_options?: string[] | null
           sizes?: string[] | null
           stock?: number
           updated_at?: string
@@ -796,31 +823,37 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          last_reset: string | null
           snapshot_date: string
           total_agents: number
           total_customers: number
           total_orders: number
           total_revenue: number
+          total_sales: number
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          last_reset?: string | null
           snapshot_date?: string
           total_agents?: number
           total_customers?: number
           total_orders?: number
           total_revenue?: number
+          total_sales?: number
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          last_reset?: string | null
           snapshot_date?: string
           total_agents?: number
           total_customers?: number
           total_orders?: number
           total_revenue?: number
+          total_sales?: number
           updated_at?: string
         }
         Relationships: []
