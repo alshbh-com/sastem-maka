@@ -712,6 +712,7 @@ export type Database = {
           colors: string[] | null
           created_at: string
           description: string | null
+          details: string | null
           display_order: number
           id: string
           image_url: string | null
@@ -732,6 +733,7 @@ export type Database = {
           colors?: string[] | null
           created_at?: string
           description?: string | null
+          details?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
@@ -752,6 +754,7 @@ export type Database = {
           colors?: string[] | null
           created_at?: string
           description?: string | null
+          details?: string | null
           display_order?: number
           id?: string
           image_url?: string | null
