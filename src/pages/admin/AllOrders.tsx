@@ -529,6 +529,15 @@ const AllOrders = () => {
                           <TableCell className="font-mono text-xs">
                             #{order.order_number || order.id.slice(0, 8)}
                           </TableCell>
+                          <TableCell className="font-mono text-xs font-bold text-primary">
+                            {(order as any).manual_code || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order as any).created_by_username || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order as any).account_name || "-"}
+                          </TableCell>
                           <TableCell>{order.customers?.governorate || "-"}</TableCell>
                           <TableCell className="font-medium">{order.customers?.name}</TableCell>
                           <TableCell>{order.customers?.phone}</TableCell>
