@@ -242,9 +242,28 @@ const Cashbox = () => {
     createTransactionMutation.mutate(transactionForm);
   };
 
-  const handlePasswordSubmit = () => {
-    // إذا كان الإجراء يخص خزنة لها كلمة مرور خاصة، تحقق منها أولاً، وإلا استخدم الكلمة الإدارية
-    let expectedPassword: string = ADMIN_PASSWORD;
+  const handlePasswordSubmit = async () => {
+    // اجلب كلمة مرور الأدمن الحالية من قاعدة البيانات (تتزامن مع تغيير كلمة الأدمن)
+    let adminPassword: string = FALLBACK_ADMIN_PASSWORD;
+    try {
+      const { data } = await supabase
+        .from("system_passwords")
+        .select("password")
+        .in("id", ["admin", "admin_delete", "master"]);
+      if (data && data.length > 0) {
+        // أي واحدة من كلمات الأدمن الرئيسية مقبولة
+        if ((data as any[]).some((r) => r.password === passwordInput)) {
+          adminPassword = passwordInput;
+        } else {
+          adminPassword = (data[0] as any).password;
+        }
+      }
+    } catch (e) {
+      // في حال فشل الاتصال نعتمد على الـ fallback
+    }
+
+    // إذا كان الإجراء يخص خزنة لها كلمة مرور خاصة، فهي مقبولة أيضاً
+    let cashboxPassword: string | null = null;
     let cashboxForCheckId: string | null = null;
 
     if (pendingAction === "transaction" && selectedCashboxId) {
@@ -256,11 +275,16 @@ const Cashbox = () => {
     if (cashboxForCheckId) {
       const cb: any = cashboxes?.find((c: any) => c.id === cashboxForCheckId);
       if (cb?.password) {
-        expectedPassword = cb.password;
+        cashboxPassword = cb.password;
       }
     }
 
-    if (passwordInput !== expectedPassword && passwordInput !== ADMIN_PASSWORD) {
+    const isValid =
+      passwordInput === adminPassword ||
+      passwordInput === FALLBACK_ADMIN_PASSWORD ||
+      (cashboxPassword !== null && passwordInput === cashboxPassword);
+
+    if (!isValid) {
       toast.error("كلمة السر غير صحيحة");
       logActivity('محاولة دخول فاشلة للخزنة', 'cashbox', { action: pendingAction });
       return;
