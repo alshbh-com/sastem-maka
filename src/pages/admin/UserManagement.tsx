@@ -216,7 +216,7 @@ const UserManagement = () => {
 
   // Update passwords mutation
   const updatePasswordsMutation = useMutation({
-    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string }) => {
+    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string; cashbox: string; reset_data: string }) => {
       const updates: Array<{ id: string; password: string }> = [];
       if (form.master) updates.push({ id: 'master', password: form.master });
       if (form.payment) updates.push({ id: 'payment', password: form.payment });
