@@ -36,6 +36,7 @@ const adminSections = [
   { title: "المنتجات", description: "إدارة المنتجات والعروض", icon: Settings, path: "/admin/products", color: "text-red-500", permission: "products" },
   { title: "الأقسام", description: "إدارة أقسام المنتجات", icon: Settings, path: "/admin/categories", color: "text-indigo-500", permission: "categories" },
   { title: "الإحصائيات", description: "إحصائيات المبيعات", icon: BarChart, path: "/admin/statistics", color: "text-cyan-500", permission: "statistics" },
+  { title: "إحصائيات المدريتورين", description: "أداء كل مدريتور شهرياً", icon: UserCog, path: "/admin/moderator-stats", color: "text-blue-600", permission: "statistics" },
   { title: "الفواتير", description: "طباعة الفواتير", icon: FileText, path: "/admin/invoices", color: "text-pink-500", permission: "invoices" },
   { title: "المحافظات", description: "إدارة المحافظات وأسعار الشحن", icon: Settings, path: "/admin/governorates", color: "text-teal-500", permission: "governorates" },
   { title: "جميع الأوردرات", description: "عرض جميع الأوردرات", icon: ShoppingCart, path: "/admin/all-orders", color: "text-violet-500", permission: "all_orders" },
