@@ -22,8 +22,9 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 const Orders = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { canEdit } = useAdminAuth();
+  const { canEdit, currentUser } = useAdminAuth();
   const canEditOrders = canEdit('orders');
+  const isModerator = (currentUser as any)?.role === 'moderator';
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [bulkAgentId, setBulkAgentId] = useState<string>("");
   const [bulkShippingCost, setBulkShippingCost] = useState<number>(0);
@@ -38,15 +39,18 @@ const Orders = () => {
   const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
   const [manualOrderDialogOpen, setManualOrderDialogOpen] = useState(false);
   const [manualOrder, setManualOrder] = useState({
+    manualCode: "",
+    manualDate: new Date().toISOString().split('T')[0],
+    accountName: "",
     customerName: "",
     phone: "",
     address: "",
+    productId: "",
     productName: "",
     productPrice: "",
     productSize: "",
     productColor: "",
     productQuantity: "1",
-    shippingCost: "",
     governorateId: ""
   });
 
