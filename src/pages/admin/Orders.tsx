@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, UserCheck, Printer, Download, Barcode, Plus } from "lucide-react";
+import { ArrowLeft, UserCheck, Printer, Download, Barcode, Plus, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -22,7 +22,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 const Orders = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { canEdit, currentUser } = useAdminAuth();
+  const { canEdit, currentUser, logout } = useAdminAuth();
   const canEditOrders = canEdit('orders');
   const isModerator = (currentUser as any)?.role === 'moderator';
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
@@ -769,7 +769,20 @@ const Orders = () => {
         {isModerator ? (
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                >
+                  <LogOut className="ml-2 h-4 w-4" />
+                  تسجيل خروج
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
