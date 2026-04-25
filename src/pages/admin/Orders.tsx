@@ -1042,6 +1042,7 @@ const Orders = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
         <Dialog open={barcodeDialogOpen} onOpenChange={setBarcodeDialogOpen}>
           <DialogContent className="max-w-2xl">
