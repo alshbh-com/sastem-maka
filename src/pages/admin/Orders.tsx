@@ -265,21 +265,21 @@ const Orders = () => {
   const createManualOrderMutation = useMutation({
     mutationFn: async () => {
       const selectedGov = governorates?.find(g => g.id === manualOrder.governorateId);
-      
+      const selectedProduct = productsList?.find(p => p.id === manualOrder.productId);
+      const productName = selectedProduct?.name || manualOrder.productName;
+
       // Customer is optional - create only if name or phone provided
       let customerId = null;
       if (manualOrder.customerName || manualOrder.phone) {
-        // Check if phone already exists
         if (manualOrder.phone && manualOrder.phone !== "غير متوفر") {
           const { data: existingCustomer } = await supabase
             .from("customers")
             .select("id")
             .eq("phone", manualOrder.phone)
-            .single();
-          
+            .maybeSingle();
+
           if (existingCustomer) {
             customerId = existingCustomer.id;
-            // Update existing customer info if needed
             await supabase
               .from("customers")
               .update({
@@ -290,8 +290,7 @@ const Orders = () => {
               .eq("id", existingCustomer.id);
           }
         }
-        
-        // Create new customer only if not found
+
         if (!customerId) {
           const { data: customer, error: customerError } = await supabase
             .from("customers")
@@ -303,7 +302,7 @@ const Orders = () => {
             })
             .select()
             .single();
-          
+
           if (customerError) throw customerError;
           customerId = customer.id;
         }
@@ -312,17 +311,18 @@ const Orders = () => {
       const productPrice = parseFloat(manualOrder.productPrice) || 0;
       const quantity = parseInt(manualOrder.productQuantity) || 1;
       const totalProductPrice = productPrice * quantity;
-      const shippingCost = parseFloat(manualOrder.shippingCost) || selectedGov?.shipping_cost || 0;
+      // Shipping is auto from governorate
+      const shippingCost = selectedGov?.shipping_cost ? parseFloat(selectedGov.shipping_cost.toString()) : 0;
 
-      const productDetails = manualOrder.productName ? [{
-        name: manualOrder.productName,
+      const productDetails = productName ? [{
+        name: productName,
         quantity: quantity,
         price: productPrice,
         size: manualOrder.productSize || null,
         color: manualOrder.productColor || null
       }] : null;
 
-      // Create order
+      // Create order with new fields
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -331,32 +331,44 @@ const Orders = () => {
           shipping_cost: shippingCost,
           governorate_id: manualOrder.governorateId && manualOrder.governorateId.trim() !== "" ? manualOrder.governorateId : null,
           status: 'pending',
-          order_details: productDetails ? JSON.stringify(productDetails) : null
+          order_details: productDetails ? JSON.stringify(productDetails) : null,
+          manual_code: manualOrder.manualCode || null,
+          account_name: manualOrder.accountName || null,
+          manual_order_date: manualOrder.manualDate || null,
+          created_by_user_id: currentUser?.id || null,
+          created_by_username: currentUser?.username || null,
         })
         .select()
         .single();
-      
+
       if (orderError) throw orderError;
 
-      // If product name provided, create order item
-      if (manualOrder.productName) {
+      // Create order item with product_id (so stock is linked)
+      if (productName) {
         const { error: itemError } = await supabase
           .from("order_items")
           .insert({
             order_id: order.id,
+            product_id: selectedProduct?.id || null,
             quantity: quantity,
             price: productPrice,
             size: manualOrder.productSize || null,
             color: manualOrder.productColor || null,
-            product_details: JSON.stringify({ 
-              name: manualOrder.productName, 
+            product_details: JSON.stringify({
+              name: productName,
               price: productPrice,
               size: manualOrder.productSize || null,
               color: manualOrder.productColor || null
             })
           });
-        
+
         if (itemError) throw itemError;
+
+        // Decrement product stock
+        if (selectedProduct) {
+          const newStock = Math.max(0, (selectedProduct.stock || 0) - quantity);
+          await supabase.from("products").update({ stock: newStock }).eq("id", selectedProduct.id);
+        }
       }
 
       return order;
@@ -364,18 +376,22 @@ const Orders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products-for-manual-order"] });
       toast.success("تم إنشاء الأوردر بنجاح");
       setManualOrderDialogOpen(false);
       setManualOrder({
+        manualCode: "",
+        manualDate: new Date().toISOString().split('T')[0],
+        accountName: "",
         customerName: "",
         phone: "",
         address: "",
+        productId: "",
         productName: "",
         productPrice: "",
         productSize: "",
         productColor: "",
         productQuantity: "1",
-        shippingCost: "",
         governorateId: ""
       });
     },
