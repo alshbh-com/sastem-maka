@@ -116,6 +116,20 @@ const Orders = () => {
     },
   });
 
+  // Products list (for moderator manual order)
+  const { data: productsList } = useQuery({
+    queryKey: ["products-for-manual-order"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, stock")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
   const bulkAssignMutation = useMutation({
     mutationFn: async ({ orderIds, agentId, shippingCost }: { orderIds: string[]; agentId: string; shippingCost: number }) => {
       // Get orders with their governorate to auto-set shipping if not specified
