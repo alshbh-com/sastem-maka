@@ -216,27 +216,18 @@ const UserManagement = () => {
 
   // Update passwords mutation
   const updatePasswordsMutation = useMutation({
-    mutationFn: async ({ master, payment, admin_delete }: { master: string; payment: string; admin_delete: string }) => {
-      if (master) {
-        const { error: masterError } = await supabase
+    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string }) => {
+      const updates: Array<{ id: string; password: string }> = [];
+      if (form.master) updates.push({ id: 'master', password: form.master });
+      if (form.payment) updates.push({ id: 'payment', password: form.payment });
+      if (form.admin_delete) updates.push({ id: 'admin_delete', password: form.admin_delete });
+      if (form.admin) updates.push({ id: 'admin', password: form.admin });
+
+      for (const u of updates) {
+        const { error } = await supabase
           .from('system_passwords')
-          .update({ password: master })
-          .eq('id', 'master');
-        if (masterError) throw masterError;
-      }
-      if (payment) {
-        const { error: paymentError } = await supabase
-          .from('system_passwords')
-          .update({ password: payment })
-          .eq('id', 'payment');
-        if (paymentError) throw paymentError;
-      }
-      if (admin_delete) {
-        const { error: adminDeleteError } = await supabase
-          .from('system_passwords')
-          .update({ password: admin_delete })
-          .eq('id', 'admin_delete');
-        if (adminDeleteError) throw adminDeleteError;
+          .upsert({ id: u.id, password: u.password }, { onConflict: 'id' });
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -244,7 +235,7 @@ const UserManagement = () => {
       toast.success('تم تحديث كلمات المرور');
       logActivity('تغيير كلمات مرور النظام', 'user_management');
       setPasswordDialogOpen(false);
-      setPasswordForm({ master: '', payment: '', admin_delete: '' });
+      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '' });
     },
     onError: () => {
       toast.error('حدث خطأ أثناء التحديث');
