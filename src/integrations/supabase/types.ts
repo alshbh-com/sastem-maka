@@ -83,6 +83,7 @@ export type Database = {
           is_active: boolean
           is_owner: boolean
           password: string
+          role: string
           updated_at: string
           username: string
         }
@@ -92,6 +93,7 @@ export type Database = {
           is_active?: boolean
           is_owner?: boolean
           password: string
+          role?: string
           updated_at?: string
           username: string
         }
@@ -101,6 +103,7 @@ export type Database = {
           is_active?: boolean
           is_owner?: boolean
           password?: string
+          role?: string
           updated_at?: string
           username?: string
         }
@@ -272,6 +275,7 @@ export type Database = {
           name: string
           notes: string | null
           opening_balance: number
+          password: string | null
         }
         Insert: {
           created_at?: string
@@ -281,6 +285,7 @@ export type Database = {
           name: string
           notes?: string | null
           opening_balance?: number
+          password?: string | null
         }
         Update: {
           created_at?: string
@@ -290,6 +295,7 @@ export type Database = {
           name?: string
           notes?: string | null
           opening_balance?: number
+          password?: string | null
         }
         Relationships: []
       }
@@ -558,15 +564,20 @@ export type Database = {
       }
       orders: {
         Row: {
+          account_name: string | null
           agent_shipping_cost: number
           assigned_at: string | null
           created_at: string
+          created_by_user_id: string | null
+          created_by_username: string | null
           customer_id: string | null
           delivery_agent_id: string | null
           discount: number
           governorate_id: string | null
           id: string
           is_shipping_included: boolean
+          manual_code: string | null
+          manual_order_date: string | null
           modified_amount: number | null
           notes: string | null
           order_details: string | null
@@ -577,15 +588,20 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          account_name?: string | null
           agent_shipping_cost?: number
           assigned_at?: string | null
           created_at?: string
+          created_by_user_id?: string | null
+          created_by_username?: string | null
           customer_id?: string | null
           delivery_agent_id?: string | null
           discount?: number
           governorate_id?: string | null
           id?: string
           is_shipping_included?: boolean
+          manual_code?: string | null
+          manual_order_date?: string | null
           modified_amount?: number | null
           notes?: string | null
           order_details?: string | null
@@ -596,15 +612,20 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          account_name?: string | null
           agent_shipping_cost?: number
           assigned_at?: string | null
           created_at?: string
+          created_by_user_id?: string | null
+          created_by_username?: string | null
           customer_id?: string | null
           delivery_agent_id?: string | null
           discount?: number
           governorate_id?: string | null
           id?: string
           is_shipping_included?: boolean
+          manual_code?: string | null
+          manual_order_date?: string | null
           modified_amount?: number | null
           notes?: string | null
           order_details?: string | null
