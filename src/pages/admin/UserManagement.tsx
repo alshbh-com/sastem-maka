@@ -55,7 +55,7 @@ const UserManagement = () => {
   const [showPasswords, setShowPasswords] = useState(false);
   
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'admin' as 'admin' | 'moderator' });
-  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '' });
+  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '', cashbox: '', reset_data: '' });
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
