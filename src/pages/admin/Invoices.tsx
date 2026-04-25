@@ -278,23 +278,19 @@ const Invoices = () => {
     }
 
     let pagesHTML = '';
-    for (let i = 0; i < cells.length; i += 4) {
-      const pageCells = cells.slice(i, i + 4);
-      while (pageCells.length < 4) {
-        pageCells.push('<div class="invoice-cell"></div>');
-      }
-      pagesHTML += `<div class="page">${pageCells.join('')}</div>`;
-    }
+    cells.forEach((cell, idx) => {
+      const isLast = idx === cells.length - 1;
+      pagesHTML += `<div class="page" style="${isLast ? 'page-break-after:auto;' : 'page-break-after:always;'}">${cell}</div>`;
+    });
 
     printWindow.document.write(`<html dir="rtl"><head><title>طباعة الفواتير</title>
       <style>
         *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:Arial,sans-serif}
-        .page{width:210mm;height:297mm;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;page-break-after:always}
-        .page:last-child{page-break-after:auto}
-        .invoice-cell{width:105mm;height:148.5mm;border:0.5px dashed #ccc;overflow:hidden;box-sizing:border-box}
-        @page{margin:0;size:A4}
-        @media print{.invoice-cell{border:0.5px dashed #bbb}}
+        body{font-family:Arial,sans-serif;background:#fff;color:#000}
+        .page{width:148mm;height:210mm;overflow:hidden;box-sizing:border-box}
+        .invoice-cell{width:148mm;height:210mm;overflow:hidden;box-sizing:border-box;background:#fff;color:#000}
+        @page{margin:0;size:A5}
+        @media print{body{background:#fff;color:#000}}
       </style></head><body>${pagesHTML}</body></html>`);
     printWindow.document.close();
     setTimeout(() => printWindow.print(), 150);
