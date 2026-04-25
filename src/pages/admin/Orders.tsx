@@ -1186,63 +1186,44 @@ const Orders = () => {
         </Dialog>
 
         <Dialog open={manualOrderDialogOpen} onOpenChange={setManualOrderDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>بوابة المدريتور - إضافة أوردر</DialogTitle>
             </DialogHeader>
             <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>الكود</Label>
-                  <Input
-                    value={manualOrder.manualCode}
-                    onChange={(e) => setManualOrder({ ...manualOrder, manualCode: e.target.value })}
-                    placeholder="مثال: 8532"
-                  />
+              <div>
+                <Label>الصق بيانات الأوردر هنا</Label>
+                <Textarea
+                  value={manualOrderText}
+                  onChange={(e) => {
+                    setManualOrderText(e.target.value);
+                    parseManualOrderText(e.target.value);
+                  }}
+                  placeholder={`الكود: 8532\nالتاريخ: 24/4\nاسم الاكونت: احمد النسر\nاسم العميل: احمد محمد\nالعنوان: المحلة الكبرى بلقينا عند قاعة الفيروز\nرقم التليفون: 01029882970\nالاوردر: سرينه\nاجمالي السعر: 450+70`}
+                  className="min-h-[200px] text-sm font-mono"
+                  dir="rtl"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  ✨ يتم تعبئة الحقول تلقائياً. الكود متغير — اكتب أي كود من عندك.
+                </p>
+              </div>
+
+              {(manualOrder.manualCode || manualOrder.customerName || manualOrder.phone) && (
+                <div className="bg-muted/50 p-3 rounded-lg text-xs space-y-1 border">
+                  <p className="font-bold text-primary mb-1">📋 البيانات المستخرجة:</p>
+                  {manualOrder.manualCode && <p>الكود: <span className="font-bold">{manualOrder.manualCode}</span></p>}
+                  {manualOrder.manualDate && <p>التاريخ: {manualOrder.manualDate}</p>}
+                  {manualOrder.accountName && <p>الاكونت: {manualOrder.accountName}</p>}
+                  {manualOrder.customerName && <p>العميل: {manualOrder.customerName}</p>}
+                  {manualOrder.phone && <p>الهاتف: {manualOrder.phone}</p>}
+                  {manualOrder.address && <p>العنوان: {manualOrder.address}</p>}
+                  {manualOrder.productName && <p>المنتج المكتوب: {manualOrder.productName}</p>}
+                  {manualOrder.productPrice && <p>السعر (بدون شحن): {manualOrder.productPrice} ج.م</p>}
                 </div>
-                <div>
-                  <Label>التاريخ</Label>
-                  <Input
-                    type="date"
-                    value={manualOrder.manualDate}
-                    onChange={(e) => setManualOrder({ ...manualOrder, manualDate: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>اسم الاكونت (صفحة السوشيال)</Label>
-                <Input
-                  value={manualOrder.accountName}
-                  onChange={(e) => setManualOrder({ ...manualOrder, accountName: e.target.value })}
-                  placeholder="مثال: احمد النسر"
-                />
-              </div>
-              <div>
-                <Label>اسم العميل</Label>
-                <Input
-                  value={manualOrder.customerName}
-                  onChange={(e) => setManualOrder({ ...manualOrder, customerName: e.target.value })}
-                  placeholder="اسم العميل"
-                />
-              </div>
-              <div>
-                <Label>العنوان</Label>
-                <Input
-                  value={manualOrder.address}
-                  onChange={(e) => setManualOrder({ ...manualOrder, address: e.target.value })}
-                  placeholder="العنوان"
-                />
-              </div>
-              <div>
-                <Label>رقم التليفون</Label>
-                <Input
-                  value={manualOrder.phone}
-                  onChange={(e) => setManualOrder({ ...manualOrder, phone: e.target.value })}
-                  placeholder="رقم الهاتف"
-                />
-              </div>
-              <div>
-                <Label>المحافظة (الشحن سيُحسب تلقائياً)</Label>
+              )}
+
+              <div className="border-t pt-3">
+                <Label>المحافظة (الشحن يُحسب تلقائياً) *</Label>
                 <Select
                   value={manualOrder.governorateId}
                   onValueChange={(value) => setManualOrder({ ...manualOrder, governorateId: value })}
@@ -1259,8 +1240,9 @@ const Orders = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="border-t pt-3">
-                <Label>اختر المنتج</Label>
+
+              <div>
+                <Label>اختر المنتج من المخزون (لخصم الكمية)</Label>
                 <Select
                   value={manualOrder.productId}
                   onValueChange={(value) => {
@@ -1268,13 +1250,12 @@ const Orders = () => {
                     setManualOrder({
                       ...manualOrder,
                       productId: value,
-                      productName: p?.name || "",
-                      productPrice: p?.price?.toString() || manualOrder.productPrice
+                      productName: p?.name || manualOrder.productName,
                     });
                   }}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر المنتج من القائمة" />
+                    <SelectValue placeholder="اختر المنتج" />
                   </SelectTrigger>
                   <SelectContent>
                     {productsList?.map((p) => (
@@ -1285,69 +1266,49 @@ const Orders = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>سعر المنتج (بدون الشحن)</Label>
-                  <Input
-                    type="number"
-                    value={manualOrder.productPrice}
-                    onChange={(e) => setManualOrder({ ...manualOrder, productPrice: e.target.value })}
-                    placeholder="السعر"
-                    min="0"
-                  />
-                </div>
-                <div>
-                  <Label>الكمية</Label>
-                  <Input
-                    type="number"
-                    value={manualOrder.productQuantity}
-                    onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
-                    placeholder="1"
-                    min="1"
-                  />
-                </div>
+
+              <div>
+                <Label>الكمية</Label>
+                <Input
+                  type="number"
+                  value={manualOrder.productQuantity}
+                  onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
+                  placeholder="1"
+                  min="1"
+                />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <Label>المقاس (اختياري)</Label>
-                  <Input
-                    value={manualOrder.productSize}
-                    onChange={(e) => setManualOrder({ ...manualOrder, productSize: e.target.value })}
-                    placeholder="L, XL..."
-                  />
-                </div>
-                <div>
-                  <Label>اللون (اختياري)</Label>
-                  <Input
-                    value={manualOrder.productColor}
-                    onChange={(e) => setManualOrder({ ...manualOrder, productColor: e.target.value })}
-                    placeholder="اللون"
-                  />
-                </div>
-              </div>
+
               {manualOrder.productPrice && (
                 <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
                   <p>سعر المنتج: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1)).toFixed(2)} ج.م</p>
-                  <p>سعر الشحن (تلقائي): {(governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0)} ج.م</p>
+                  <p>سعر الشحن (تلقائي من المحافظة): {(governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0)} ج.م</p>
                   <p className="font-bold pt-1 border-t">
                     الإجمالي: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1) + parseFloat((governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0).toString())).toFixed(2)} ج.م
                   </p>
                 </div>
               )}
+
               {currentUser && (
                 <p className="text-xs text-muted-foreground text-center border-t pt-2">
-                  منشئ الأوردر: <span className="font-bold">{currentUser.username}</span>
+                  منشئ الأوردر: <span className="font-bold text-primary">{currentUser.username}</span>
                 </p>
               )}
+
               <Button
                 onClick={() => {
                   if (!manualOrder.productPrice) {
-                    toast.error("يرجى إدخال سعر المنتج");
+                    toast.error("لم يتم استخراج السعر — تأكد من كتابة (اجمالي السعر: ...) في النص");
+                    return;
+                  }
+                  if (!manualOrder.governorateId) {
+                    toast.error("يرجى اختيار المحافظة");
                     return;
                   }
                   createManualOrderMutation.mutate();
+                  setManualOrderText("");
                 }}
                 className="w-full"
+                size="lg"
                 disabled={createManualOrderMutation.isPending}
               >
                 {createManualOrderMutation.isPending ? "جاري الإنشاء..." : "إنشاء الأوردر"}
