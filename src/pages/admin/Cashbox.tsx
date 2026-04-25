@@ -26,7 +26,7 @@ const TRANSACTION_REASONS = [
   { value: 'manual', label: 'يدوي' }
 ];
 
-const FALLBACK_ADMIN_PASSWORD = "family";
+// كلمات المرور تُقرأ ديناميكياً من جدول system_passwords (إدارة المستخدمين)
 
 const Cashbox = () => {
   const navigate = useNavigate();
@@ -243,23 +243,18 @@ const Cashbox = () => {
   };
 
   const handlePasswordSubmit = async () => {
-    // اجلب كلمة مرور الأدمن الحالية من قاعدة البيانات (تتزامن مع تغيير كلمة الأدمن)
-    let adminPassword: string = FALLBACK_ADMIN_PASSWORD;
+    // اجلب كل كلمات مرور النظام (cashbox + admin + master + admin_delete) من قاعدة البيانات
+    let validPasswords: string[] = [];
     try {
       const { data } = await supabase
         .from("system_passwords")
         .select("password")
-        .in("id", ["admin", "admin_delete", "master"]);
-      if (data && data.length > 0) {
-        // أي واحدة من كلمات الأدمن الرئيسية مقبولة
-        if ((data as any[]).some((r) => r.password === passwordInput)) {
-          adminPassword = passwordInput;
-        } else {
-          adminPassword = (data[0] as any).password;
-        }
+        .in("id", ["cashbox", "admin", "admin_delete", "master"]);
+      if (data) {
+        validPasswords = (data as any[]).map((r) => r.password).filter(Boolean);
       }
     } catch (e) {
-      // في حال فشل الاتصال نعتمد على الـ fallback
+      // فشل الاتصال — لن نقبل أي كلمة مرور لأسباب أمنية
     }
 
     // إذا كان الإجراء يخص خزنة لها كلمة مرور خاصة، فهي مقبولة أيضاً
@@ -280,8 +275,7 @@ const Cashbox = () => {
     }
 
     const isValid =
-      passwordInput === adminPassword ||
-      passwordInput === FALLBACK_ADMIN_PASSWORD ||
+      validPasswords.includes(passwordInput) ||
       (cashboxPassword !== null && passwordInput === cashboxPassword);
 
     if (!isValid) {

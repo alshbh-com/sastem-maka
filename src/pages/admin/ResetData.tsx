@@ -18,8 +18,13 @@ const ResetData = () => {
 
   const resetAllDataMutation = useMutation({
     mutationFn: async (password: string) => {
-      // التحقق من كلمة السر
-      if (password !== "01278006248m") {
+      // التحقق من كلمة السر من جدول system_passwords (تُدار من إدارة المستخدمين)
+      const { data: pwRows } = await supabase
+        .from("system_passwords")
+        .select("password")
+        .in("id", ["reset_data", "master", "admin"]);
+      const validPasswords = (pwRows || []).map((r: any) => r.password).filter(Boolean);
+      if (!validPasswords.includes(password)) {
         throw new Error("كلمة السر غير صحيحة");
       }
 

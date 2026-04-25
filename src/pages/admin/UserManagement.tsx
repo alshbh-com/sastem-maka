@@ -55,7 +55,7 @@ const UserManagement = () => {
   const [showPasswords, setShowPasswords] = useState(false);
   
   const [newUser, setNewUser] = useState({ username: '', password: '', role: 'admin' as 'admin' | 'moderator' });
-  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '' });
+  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '', cashbox: '', reset_data: '' });
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
@@ -216,12 +216,14 @@ const UserManagement = () => {
 
   // Update passwords mutation
   const updatePasswordsMutation = useMutation({
-    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string }) => {
+    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string; cashbox: string; reset_data: string }) => {
       const updates: Array<{ id: string; password: string }> = [];
       if (form.master) updates.push({ id: 'master', password: form.master });
       if (form.payment) updates.push({ id: 'payment', password: form.payment });
       if (form.admin_delete) updates.push({ id: 'admin_delete', password: form.admin_delete });
       if (form.admin) updates.push({ id: 'admin', password: form.admin });
+      if (form.cashbox) updates.push({ id: 'cashbox', password: form.cashbox });
+      if (form.reset_data) updates.push({ id: 'reset_data', password: form.reset_data });
 
       for (const u of updates) {
         const { error } = await supabase
@@ -235,7 +237,7 @@ const UserManagement = () => {
       toast.success('تم تحديث كلمات المرور');
       logActivity('تغيير كلمات مرور النظام', 'user_management');
       setPasswordDialogOpen(false);
-      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '' });
+      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '', cashbox: '', reset_data: '' });
     },
     onError: () => {
       toast.error('حدث خطأ أثناء التحديث');
@@ -343,7 +345,7 @@ const UserManagement = () => {
                     </div>
                     <div className="border-t pt-3">
                       <Label className="text-primary font-bold">
-                        كلمة المرور الإدارية الرئيسية (الحالية: {systemPasswords?.find(p => p.id === 'admin')?.password || '01278006248'})
+                        كلمة المرور الإدارية الرئيسية (الحالية: {systemPasswords?.find(p => p.id === 'admin')?.password || '—'})
                       </Label>
                       <Input
                         value={passwordForm.admin}
@@ -354,10 +356,26 @@ const UserManagement = () => {
                         هذه هي كلمة المرور الإدارية المستخدمة في النظام (يفضل تغييرها دورياً)
                       </p>
                     </div>
+                    <div>
+                      <Label>كلمة مرور الخزنة (الحالية: {systemPasswords?.find(p => p.id === 'cashbox')?.password || '—'})</Label>
+                      <Input
+                        value={passwordForm.cashbox}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, cashbox: e.target.value }))}
+                        placeholder="اترك فارغ للإبقاء كما هي"
+                      />
+                    </div>
+                    <div>
+                      <Label>كلمة مرور مسح كل البيانات (الحالية: {systemPasswords?.find(p => p.id === 'reset_data')?.password || '—'})</Label>
+                      <Input
+                        value={passwordForm.reset_data}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, reset_data: e.target.value }))}
+                        placeholder="اترك فارغ للإبقاء كما هي"
+                      />
+                    </div>
                     <Button 
                       onClick={() => updatePasswordsMutation.mutate(passwordForm)}
                       className="w-full"
-                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete && !passwordForm.admin}
+                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete && !passwordForm.admin && !passwordForm.cashbox && !passwordForm.reset_data}
                     >
                       حفظ التغييرات
                     </Button>
