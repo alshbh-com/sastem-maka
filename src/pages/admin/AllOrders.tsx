@@ -500,6 +500,9 @@ const AllOrders = () => {
                   <TableHeader>
                     <TableRow>
                       <TableHead>رقم الأوردر</TableHead>
+                      <TableHead>الكود اليدوي</TableHead>
+                      <TableHead>المدريتور</TableHead>
+                      <TableHead>اسم الاكونت</TableHead>
                       <TableHead>المحافظة</TableHead>
                       <TableHead>الاسم</TableHead>
                       <TableHead>الهاتف</TableHead>
