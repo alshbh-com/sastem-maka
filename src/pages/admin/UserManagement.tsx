@@ -406,8 +406,30 @@ const UserManagement = () => {
                         كلمة المرور يجب أن تكون فريدة - سيتم استخدامها للدخول
                       </p>
                     </div>
+                    <div>
+                      <Label>نوع المستخدم</Label>
+                      <RadioGroup
+                        value={newUser.role}
+                        onValueChange={(v) => setNewUser(prev => ({ ...prev, role: v as 'admin' | 'moderator' }))}
+                        className="flex gap-4 mt-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="admin" id="role-admin" />
+                          <Label htmlFor="role-admin" className="cursor-pointer">مدير عادي (يحتاج تحديد صلاحيات)</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="moderator" id="role-moderator" />
+                          <Label htmlFor="role-moderator" className="cursor-pointer">مدريتور (تسجيل أوردرات يدوي فقط)</Label>
+                        </div>
+                      </RadioGroup>
+                      {newUser.role === 'moderator' && (
+                        <p className="text-xs text-primary mt-2">
+                          سيظهر للمدريتور فقط نموذج إضافة أوردر يدوي داخل صفحة الأوردرات
+                        </p>
+                      )}
+                    </div>
                     <Button onClick={handleCreateUser} className="w-full">
-                      إنشاء وتحديد الصلاحيات
+                      {newUser.role === 'moderator' ? 'إنشاء المدريتور' : 'إنشاء وتحديد الصلاحيات'}
                     </Button>
                   </div>
                 </DialogContent>
