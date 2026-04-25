@@ -270,12 +270,10 @@ const Invoices = () => {
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
-    const cells: string[] = [];
-    for (let c = 0; c < printCopies; c++) {
-      ordersToPrint.forEach(order => {
-        cells.push(generateInvoiceCell(order, brandName, watermarkText, logoUrl));
-      });
-    }
+    // فاتورة واحدة فقط لكل أوردر — بدون نسخ مكررة
+    const cells: string[] = ordersToPrint.map(order =>
+      generateInvoiceCell(order, brandName, watermarkText, logoUrl)
+    );
 
     let pagesHTML = '';
     cells.forEach((cell, idx) => {
