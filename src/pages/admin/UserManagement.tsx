@@ -54,8 +54,8 @@ const UserManagement = () => {
   const [permissionSettings, setPermissionSettings] = useState<PermissionSetting[]>([]);
   const [showPasswords, setShowPasswords] = useState(false);
   
-  const [newUser, setNewUser] = useState({ username: '', password: '' });
-  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '' });
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'admin' as 'admin' | 'moderator' });
+  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '' });
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
@@ -102,10 +102,10 @@ const UserManagement = () => {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+    mutationFn: async ({ username, password, role }: { username: string; password: string; role: string }) => {
       const { data, error } = await supabase
         .from('admin_users')
-        .insert({ username, password })
+        .insert({ username, password, role } as any)
         .select()
         .single();
       if (error) throw error;
@@ -114,13 +114,26 @@ const UserManagement = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin_users'] });
       toast.success('تم إنشاء المستخدم');
-      logActivity('إنشاء مستخدم', 'user_management', { username: data.username });
-      setNewUser({ username: '', password: '' });
+      logActivity('إنشاء مستخدم', 'user_management', { username: data.username, role: (data as any).role });
+      const isModerator = (data as any).role === 'moderator';
+      setNewUser({ username: '', password: '', role: 'admin' });
       setSelectedUser(data);
-      // Initialize all permissions as 'none'
-      setPermissionSettings(PERMISSIONS.map(p => ({ permission: p.id, type: 'none' })));
-      setCreateDialogOpen(false);
-      setPermDialogOpen(true);
+
+      if (isModerator) {
+        // Moderator: auto-grant only the orders permission (edit) and skip dialog
+        setCreateDialogOpen(false);
+        savePermissionsMutation.mutate({
+          userId: data.id,
+          permissions: PERMISSIONS.map(p => ({
+            permission: p.id,
+            type: p.id === 'orders' ? 'edit' : 'none'
+          }))
+        });
+      } else {
+        setPermissionSettings(PERMISSIONS.map(p => ({ permission: p.id, type: 'none' })));
+        setCreateDialogOpen(false);
+        setPermDialogOpen(true);
+      }
     },
     onError: (error: any) => {
       if (error.message?.includes('unique')) {
