@@ -341,10 +341,23 @@ const UserManagement = () => {
                         placeholder="اترك فارغ للإبقاء كما هي"
                       />
                     </div>
+                    <div className="border-t pt-3">
+                      <Label className="text-primary font-bold">
+                        كلمة المرور الإدارية الرئيسية (الحالية: {systemPasswords?.find(p => p.id === 'admin')?.password || '01278006248'})
+                      </Label>
+                      <Input
+                        value={passwordForm.admin}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, admin: e.target.value }))}
+                        placeholder="غيّرها لو اتعرفت"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        هذه هي كلمة المرور الإدارية المستخدمة في النظام (يفضل تغييرها دورياً)
+                      </p>
+                    </div>
                     <Button 
                       onClick={() => updatePasswordsMutation.mutate(passwordForm)}
                       className="w-full"
-                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete}
+                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete && !passwordForm.admin}
                     >
                       حفظ التغييرات
                     </Button>
