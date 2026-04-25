@@ -53,7 +53,8 @@ const Cashbox = () => {
 
   const [newCashboxForm, setNewCashboxForm] = useState({
     name: "",
-    opening_balance: ""
+    opening_balance: "",
+    password: ""
   });
 
   const canManageCashbox = canEdit('cashbox') || canEdit('treasury');
@@ -143,8 +144,9 @@ const Cashbox = () => {
         .insert({
           name: data.name,
           opening_balance: parseFloat(data.opening_balance) || 0,
+          password: data.password || null,
           created_by: currentUser?.id || null
-        });
+        } as any);
       
       if (error) throw error;
     },
@@ -153,7 +155,7 @@ const Cashbox = () => {
       toast.success("تم إنشاء الخزنة بنجاح");
       logActivity('إنشاء خزنة', 'cashbox', { name: newCashboxForm.name });
       setCreateCashboxOpen(false);
-      setNewCashboxForm({ name: "", opening_balance: "" });
+      setNewCashboxForm({ name: "", opening_balance: "", password: "" });
     },
     onError: () => {
       toast.error("حدث خطأ أثناء إنشاء الخزنة");
@@ -339,6 +341,18 @@ const Cashbox = () => {
                         onChange={(e) => setNewCashboxForm({...newCashboxForm, opening_balance: e.target.value})}
                         placeholder="0.00"
                       />
+                    </div>
+                    <div>
+                      <Label>كلمة مرور الخزنة (اختياري)</Label>
+                      <Input
+                        type="text"
+                        value={newCashboxForm.password}
+                        onChange={(e) => setNewCashboxForm({...newCashboxForm, password: e.target.value})}
+                        placeholder="اتركها فارغة لو مش محتاج باسورد خاص"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        كل خزنة يمكن أن يكون لها كلمة مرور خاصة بها
+                      </p>
                     </div>
                     <Button type="submit" className="w-full">إنشاء</Button>
                   </form>
