@@ -222,6 +222,8 @@ const UserManagement = () => {
       if (form.payment) updates.push({ id: 'payment', password: form.payment });
       if (form.admin_delete) updates.push({ id: 'admin_delete', password: form.admin_delete });
       if (form.admin) updates.push({ id: 'admin', password: form.admin });
+      if (form.cashbox) updates.push({ id: 'cashbox', password: form.cashbox });
+      if (form.reset_data) updates.push({ id: 'reset_data', password: form.reset_data });
 
       for (const u of updates) {
         const { error } = await supabase
@@ -235,7 +237,7 @@ const UserManagement = () => {
       toast.success('تم تحديث كلمات المرور');
       logActivity('تغيير كلمات مرور النظام', 'user_management');
       setPasswordDialogOpen(false);
-      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '' });
+      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '', cashbox: '', reset_data: '' });
     },
     onError: () => {
       toast.error('حدث خطأ أثناء التحديث');
