@@ -10,6 +10,7 @@ interface AdminUser {
   id: string;
   username: string;
   password: string;
+  role?: string;
   permissions: Permission[];
 }
 
@@ -73,6 +74,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
           id: user.id,
           username: user.username,
           password: user.password,
+          role: (user as any).role || 'admin',
           permissions: permissions?.map(p => ({
             permission: p.permission,
             permission_type: p.permission_type as 'view' | 'edit'
@@ -118,6 +120,7 @@ export const AdminAuthProvider = ({ children }: { children: ReactNode }) => {
         id: user.id,
         username: user.username,
         password: user.password,
+        role: (user as any).role || 'admin',
         permissions: permissions?.map(p => ({ 
           permission: p.permission, 
           permission_type: p.permission_type as 'view' | 'edit'
