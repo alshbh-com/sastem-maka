@@ -769,7 +769,20 @@ const Orders = () => {
         {isModerator ? (
           <Card className="max-w-2xl mx-auto">
             <CardHeader>
-              <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    logout();
+                    navigate("/");
+                  }}
+                >
+                  <LogOut className="ml-2 h-4 w-4" />
+                  تسجيل خروج
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
