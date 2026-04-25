@@ -22,7 +22,7 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 const Orders = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { canEdit, currentUser } = useAdminAuth();
+  const { canEdit, currentUser, logout } = useAdminAuth();
   const canEditOrders = canEdit('orders');
   const isModerator = (currentUser as any)?.role === 'moderator';
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
