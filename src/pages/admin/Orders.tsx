@@ -688,23 +688,6 @@ const Orders = () => {
     return <div className="p-8">جاري التحميل...</div>;
   }
 
-  // (moderator branch is handled below by hiding non-essential UI)
-
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
-      <div className="container mx-auto px-4">
-        <Button onClick={() => navigate("/admin")} variant="ghost" className="mb-4">
-          <ArrowLeft className="ml-2 h-4 w-4" />
-          الرجوع إلى الصفحة الرئيسية
-        </Button>
-
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <CardTitle>الأوردرات</CardTitle>
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
       <div className="container mx-auto px-4">
