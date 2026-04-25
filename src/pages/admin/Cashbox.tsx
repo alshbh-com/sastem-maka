@@ -243,7 +243,24 @@ const Cashbox = () => {
   };
 
   const handlePasswordSubmit = () => {
-    if (passwordInput !== ADMIN_PASSWORD) {
+    // إذا كان الإجراء يخص خزنة لها كلمة مرور خاصة، تحقق منها أولاً، وإلا استخدم الكلمة الإدارية
+    let expectedPassword: string = ADMIN_PASSWORD;
+    let cashboxForCheckId: string | null = null;
+
+    if (pendingAction === "transaction" && selectedCashboxId) {
+      cashboxForCheckId = selectedCashboxId;
+    } else if (pendingAction === "delete" && cashboxToDelete) {
+      cashboxForCheckId = cashboxToDelete;
+    }
+
+    if (cashboxForCheckId) {
+      const cb: any = cashboxes?.find((c: any) => c.id === cashboxForCheckId);
+      if (cb?.password) {
+        expectedPassword = cb.password;
+      }
+    }
+
+    if (passwordInput !== expectedPassword && passwordInput !== ADMIN_PASSWORD) {
       toast.error("كلمة السر غير صحيحة");
       logActivity('محاولة دخول فاشلة للخزنة', 'cashbox', { action: pendingAction });
       return;
