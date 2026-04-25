@@ -325,27 +325,6 @@ const Invoices = () => {
                   <Printer className="ml-2 h-4 w-4" />
                   طباعة ({selectedOrders.length})
                 </Button>
-                <div className="flex items-center gap-1">
-                  <Label className="text-xs whitespace-nowrap">نسخ:</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={10}
-                    value={printCopies}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val === '') {
-                        setPrintCopies(1);
-                        return;
-                      }
-                      const num = parseInt(val);
-                      if (!isNaN(num)) {
-                        setPrintCopies(Math.max(1, Math.min(10, num)));
-                      }
-                    }}
-                    className="w-16 h-9 text-center"
-                  />
-                </div>
               </div>
             </div>
             
