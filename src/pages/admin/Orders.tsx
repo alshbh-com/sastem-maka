@@ -38,6 +38,7 @@ const Orders = () => {
   const [officeName, setOfficeName] = useState<string>("");
   const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
   const [manualOrderDialogOpen, setManualOrderDialogOpen] = useState(false);
+  const [manualOrderText, setManualOrderText] = useState("");
   const [manualOrder, setManualOrder] = useState({
     manualCode: "",
     manualDate: new Date().toISOString().split('T')[0],
@@ -53,6 +54,73 @@ const Orders = () => {
     productQuantity: "1",
     governorateId: ""
   });
+
+  // تحويل الأرقام العربية إلى لاتينية
+  const normalizeDigits = (s: string) =>
+    s.replace(/[٠-٩]/g, (d) => String("٠١٢٣٤٥٦٧٨٩".indexOf(d)))
+     .replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d)));
+
+  // parser لنص الأوردر اليدوي
+  const parseManualOrderText = (raw: string) => {
+    if (!raw || !raw.trim()) return;
+    const text = raw.replace(/[()]/g, "").trim();
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+    const get = (keys: string[]) => {
+      for (const line of lines) {
+        const m = line.match(/^([^:：]+)[:：](.*)$/);
+        if (!m) continue;
+        const key = m[1].trim();
+        if (keys.some(k => key.includes(k))) return m[2].trim();
+      }
+      return "";
+    };
+
+    const code = get(["الكود", "كود"]);
+    const dateRaw = normalizeDigits(get(["التاريخ", "تاريخ"]));
+    const account = get(["الاكونت", "الأكونت", "اكونت", "أكونت", "اسم الاكونت", "اسم الأكونت"]);
+    const customer = get(["اسم العميل", "العميل"]);
+    const address = get(["العنوان", "عنوان"]);
+    const phoneRaw = normalizeDigits(get(["التليفون", "التلفون", "الموبايل", "الهاتف", "تليفون", "موبايل"]));
+    const productLine = get(["الاوردر", "الأوردر", "المنتج", "اوردر", "أوردر"]);
+    const priceLineRaw = normalizeDigits(get(["اجمالي السعر", "إجمالي السعر", "السعر", "الاجمالي", "الإجمالي", "اجمالي"]));
+
+    // التاريخ: نقبل "24/4" أو "24/4/2026" أو "2026-04-24"
+    let parsedDate = manualOrder.manualDate;
+    if (dateRaw) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateRaw)) {
+        parsedDate = dateRaw;
+      } else {
+        const m = dateRaw.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?/);
+        if (m) {
+          const d = m[1].padStart(2, "0");
+          const mo = m[2].padStart(2, "0");
+          let y = m[3] || String(new Date().getFullYear());
+          if (y.length === 2) y = "20" + y;
+          parsedDate = `${y}-${mo}-${d}`;
+        }
+      }
+    }
+
+    // السعر: لو فيه + يبقا أول رقم = سعر المنتج، الباقي شحن (هنتجاهله لأن الشحن يتحسب من المحافظة)
+    let productPrice = "";
+    if (priceLineRaw) {
+      const nums = priceLineRaw.match(/\d+(?:\.\d+)?/g);
+      if (nums && nums.length > 0) productPrice = nums[0];
+    }
+
+    setManualOrder(prev => ({
+      ...prev,
+      manualCode: code || prev.manualCode,
+      manualDate: parsedDate,
+      accountName: account || prev.accountName,
+      customerName: customer || prev.customerName,
+      address: address || prev.address,
+      phone: phoneRaw || prev.phone,
+      productName: productLine || prev.productName,
+      productPrice: productPrice || prev.productPrice,
+    }));
+  };
 
   const { data: orders, isLoading } = useQuery({
     queryKey: ["orders"],
