@@ -54,8 +54,8 @@ const UserManagement = () => {
   const [permissionSettings, setPermissionSettings] = useState<PermissionSetting[]>([]);
   const [showPasswords, setShowPasswords] = useState(false);
   
-  const [newUser, setNewUser] = useState({ username: '', password: '' });
-  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '' });
+  const [newUser, setNewUser] = useState({ username: '', password: '', role: 'admin' as 'admin' | 'moderator' });
+  const [passwordForm, setPasswordForm] = useState({ master: '', payment: '', admin_delete: '', admin: '' });
 
   // Fetch users
   const { data: users, isLoading } = useQuery({
@@ -102,10 +102,10 @@ const UserManagement = () => {
 
   // Create user mutation
   const createUserMutation = useMutation({
-    mutationFn: async ({ username, password }: { username: string; password: string }) => {
+    mutationFn: async ({ username, password, role }: { username: string; password: string; role: string }) => {
       const { data, error } = await supabase
         .from('admin_users')
-        .insert({ username, password })
+        .insert({ username, password, role } as any)
         .select()
         .single();
       if (error) throw error;
@@ -114,13 +114,26 @@ const UserManagement = () => {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['admin_users'] });
       toast.success('تم إنشاء المستخدم');
-      logActivity('إنشاء مستخدم', 'user_management', { username: data.username });
-      setNewUser({ username: '', password: '' });
+      logActivity('إنشاء مستخدم', 'user_management', { username: data.username, role: (data as any).role });
+      const isModerator = (data as any).role === 'moderator';
+      setNewUser({ username: '', password: '', role: 'admin' });
       setSelectedUser(data);
-      // Initialize all permissions as 'none'
-      setPermissionSettings(PERMISSIONS.map(p => ({ permission: p.id, type: 'none' })));
-      setCreateDialogOpen(false);
-      setPermDialogOpen(true);
+
+      if (isModerator) {
+        // Moderator: auto-grant only the orders permission (edit) and skip dialog
+        setCreateDialogOpen(false);
+        savePermissionsMutation.mutate({
+          userId: data.id,
+          permissions: PERMISSIONS.map(p => ({
+            permission: p.id,
+            type: p.id === 'orders' ? 'edit' : 'none'
+          }))
+        });
+      } else {
+        setPermissionSettings(PERMISSIONS.map(p => ({ permission: p.id, type: 'none' })));
+        setCreateDialogOpen(false);
+        setPermDialogOpen(true);
+      }
     },
     onError: (error: any) => {
       if (error.message?.includes('unique')) {
@@ -203,27 +216,18 @@ const UserManagement = () => {
 
   // Update passwords mutation
   const updatePasswordsMutation = useMutation({
-    mutationFn: async ({ master, payment, admin_delete }: { master: string; payment: string; admin_delete: string }) => {
-      if (master) {
-        const { error: masterError } = await supabase
+    mutationFn: async (form: { master: string; payment: string; admin_delete: string; admin: string }) => {
+      const updates: Array<{ id: string; password: string }> = [];
+      if (form.master) updates.push({ id: 'master', password: form.master });
+      if (form.payment) updates.push({ id: 'payment', password: form.payment });
+      if (form.admin_delete) updates.push({ id: 'admin_delete', password: form.admin_delete });
+      if (form.admin) updates.push({ id: 'admin', password: form.admin });
+
+      for (const u of updates) {
+        const { error } = await supabase
           .from('system_passwords')
-          .update({ password: master })
-          .eq('id', 'master');
-        if (masterError) throw masterError;
-      }
-      if (payment) {
-        const { error: paymentError } = await supabase
-          .from('system_passwords')
-          .update({ password: payment })
-          .eq('id', 'payment');
-        if (paymentError) throw paymentError;
-      }
-      if (admin_delete) {
-        const { error: adminDeleteError } = await supabase
-          .from('system_passwords')
-          .update({ password: admin_delete })
-          .eq('id', 'admin_delete');
-        if (adminDeleteError) throw adminDeleteError;
+          .upsert({ id: u.id, password: u.password }, { onConflict: 'id' });
+        if (error) throw error;
       }
     },
     onSuccess: () => {
@@ -231,7 +235,7 @@ const UserManagement = () => {
       toast.success('تم تحديث كلمات المرور');
       logActivity('تغيير كلمات مرور النظام', 'user_management');
       setPasswordDialogOpen(false);
-      setPasswordForm({ master: '', payment: '', admin_delete: '' });
+      setPasswordForm({ master: '', payment: '', admin_delete: '', admin: '' });
     },
     onError: () => {
       toast.error('حدث خطأ أثناء التحديث');
@@ -337,10 +341,23 @@ const UserManagement = () => {
                         placeholder="اترك فارغ للإبقاء كما هي"
                       />
                     </div>
+                    <div className="border-t pt-3">
+                      <Label className="text-primary font-bold">
+                        كلمة المرور الإدارية الرئيسية (الحالية: {systemPasswords?.find(p => p.id === 'admin')?.password || '01278006248'})
+                      </Label>
+                      <Input
+                        value={passwordForm.admin}
+                        onChange={(e) => setPasswordForm(prev => ({ ...prev, admin: e.target.value }))}
+                        placeholder="غيّرها لو اتعرفت"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        هذه هي كلمة المرور الإدارية المستخدمة في النظام (يفضل تغييرها دورياً)
+                      </p>
+                    </div>
                     <Button 
                       onClick={() => updatePasswordsMutation.mutate(passwordForm)}
                       className="w-full"
-                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete}
+                      disabled={!passwordForm.master && !passwordForm.payment && !passwordForm.admin_delete && !passwordForm.admin}
                     >
                       حفظ التغييرات
                     </Button>
@@ -389,8 +406,30 @@ const UserManagement = () => {
                         كلمة المرور يجب أن تكون فريدة - سيتم استخدامها للدخول
                       </p>
                     </div>
+                    <div>
+                      <Label>نوع المستخدم</Label>
+                      <RadioGroup
+                        value={newUser.role}
+                        onValueChange={(v) => setNewUser(prev => ({ ...prev, role: v as 'admin' | 'moderator' }))}
+                        className="flex gap-4 mt-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="admin" id="role-admin" />
+                          <Label htmlFor="role-admin" className="cursor-pointer">مدير عادي (يحتاج تحديد صلاحيات)</Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <RadioGroupItem value="moderator" id="role-moderator" />
+                          <Label htmlFor="role-moderator" className="cursor-pointer">مدريتور (تسجيل أوردرات يدوي فقط)</Label>
+                        </div>
+                      </RadioGroup>
+                      {newUser.role === 'moderator' && (
+                        <p className="text-xs text-primary mt-2">
+                          سيظهر للمدريتور فقط نموذج إضافة أوردر يدوي داخل صفحة الأوردرات
+                        </p>
+                      )}
+                    </div>
                     <Button onClick={handleCreateUser} className="w-full">
-                      إنشاء وتحديد الصلاحيات
+                      {newUser.role === 'moderator' ? 'إنشاء المدريتور' : 'إنشاء وتحديد الصلاحيات'}
                     </Button>
                   </div>
                 </DialogContent>
@@ -402,6 +441,7 @@ const UserManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم المستخدم</TableHead>
+                  <TableHead>النوع</TableHead>
                   <TableHead>كلمة المرور</TableHead>
                   <TableHead>الصلاحيات</TableHead>
                   <TableHead>الحالة</TableHead>
@@ -412,6 +452,13 @@ const UserManagement = () => {
                 {users?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>
+                      {(user as any).role === 'moderator' ? (
+                        <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-1 rounded text-xs font-medium">مدريتور</span>
+                      ) : (
+                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">مدير</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{user.password}</TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">

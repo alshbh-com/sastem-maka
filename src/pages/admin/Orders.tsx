@@ -22,8 +22,9 @@ import { useAdminAuth } from "@/contexts/AdminAuthContext";
 const Orders = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { canEdit } = useAdminAuth();
+  const { canEdit, currentUser } = useAdminAuth();
   const canEditOrders = canEdit('orders');
+  const isModerator = (currentUser as any)?.role === 'moderator';
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [bulkAgentId, setBulkAgentId] = useState<string>("");
   const [bulkShippingCost, setBulkShippingCost] = useState<number>(0);
@@ -38,15 +39,18 @@ const Orders = () => {
   const [editingNotes, setEditingNotes] = useState<{ [key: string]: string }>({});
   const [manualOrderDialogOpen, setManualOrderDialogOpen] = useState(false);
   const [manualOrder, setManualOrder] = useState({
+    manualCode: "",
+    manualDate: new Date().toISOString().split('T')[0],
+    accountName: "",
     customerName: "",
     phone: "",
     address: "",
+    productId: "",
     productName: "",
     productPrice: "",
     productSize: "",
     productColor: "",
     productQuantity: "1",
-    shippingCost: "",
     governorateId: ""
   });
 
@@ -109,6 +113,20 @@ const Orders = () => {
       
       if (error) throw error;
       return data;
+    },
+  });
+
+  // Products list (for moderator manual order)
+  const { data: productsList } = useQuery({
+    queryKey: ["products-for-manual-order"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("products")
+        .select("id, name, price, stock")
+        .eq("is_active", true)
+        .order("name");
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -247,21 +265,21 @@ const Orders = () => {
   const createManualOrderMutation = useMutation({
     mutationFn: async () => {
       const selectedGov = governorates?.find(g => g.id === manualOrder.governorateId);
-      
+      const selectedProduct = productsList?.find(p => p.id === manualOrder.productId);
+      const productName = selectedProduct?.name || manualOrder.productName;
+
       // Customer is optional - create only if name or phone provided
       let customerId = null;
       if (manualOrder.customerName || manualOrder.phone) {
-        // Check if phone already exists
         if (manualOrder.phone && manualOrder.phone !== "غير متوفر") {
           const { data: existingCustomer } = await supabase
             .from("customers")
             .select("id")
             .eq("phone", manualOrder.phone)
-            .single();
-          
+            .maybeSingle();
+
           if (existingCustomer) {
             customerId = existingCustomer.id;
-            // Update existing customer info if needed
             await supabase
               .from("customers")
               .update({
@@ -272,8 +290,7 @@ const Orders = () => {
               .eq("id", existingCustomer.id);
           }
         }
-        
-        // Create new customer only if not found
+
         if (!customerId) {
           const { data: customer, error: customerError } = await supabase
             .from("customers")
@@ -285,7 +302,7 @@ const Orders = () => {
             })
             .select()
             .single();
-          
+
           if (customerError) throw customerError;
           customerId = customer.id;
         }
@@ -294,17 +311,18 @@ const Orders = () => {
       const productPrice = parseFloat(manualOrder.productPrice) || 0;
       const quantity = parseInt(manualOrder.productQuantity) || 1;
       const totalProductPrice = productPrice * quantity;
-      const shippingCost = parseFloat(manualOrder.shippingCost) || selectedGov?.shipping_cost || 0;
+      // Shipping is auto from governorate
+      const shippingCost = selectedGov?.shipping_cost ? parseFloat(selectedGov.shipping_cost.toString()) : 0;
 
-      const productDetails = manualOrder.productName ? [{
-        name: manualOrder.productName,
+      const productDetails = productName ? [{
+        name: productName,
         quantity: quantity,
         price: productPrice,
         size: manualOrder.productSize || null,
         color: manualOrder.productColor || null
       }] : null;
 
-      // Create order
+      // Create order with new fields
       const { data: order, error: orderError } = await supabase
         .from("orders")
         .insert({
@@ -313,32 +331,44 @@ const Orders = () => {
           shipping_cost: shippingCost,
           governorate_id: manualOrder.governorateId && manualOrder.governorateId.trim() !== "" ? manualOrder.governorateId : null,
           status: 'pending',
-          order_details: productDetails ? JSON.stringify(productDetails) : null
+          order_details: productDetails ? JSON.stringify(productDetails) : null,
+          manual_code: manualOrder.manualCode || null,
+          account_name: manualOrder.accountName || null,
+          manual_order_date: manualOrder.manualDate || null,
+          created_by_user_id: currentUser?.id || null,
+          created_by_username: currentUser?.username || null,
         })
         .select()
         .single();
-      
+
       if (orderError) throw orderError;
 
-      // If product name provided, create order item
-      if (manualOrder.productName) {
+      // Create order item with product_id (so stock is linked)
+      if (productName) {
         const { error: itemError } = await supabase
           .from("order_items")
           .insert({
             order_id: order.id,
+            product_id: selectedProduct?.id || null,
             quantity: quantity,
             price: productPrice,
             size: manualOrder.productSize || null,
             color: manualOrder.productColor || null,
-            product_details: JSON.stringify({ 
-              name: manualOrder.productName, 
+            product_details: JSON.stringify({
+              name: productName,
               price: productPrice,
               size: manualOrder.productSize || null,
               color: manualOrder.productColor || null
             })
           });
-        
+
         if (itemError) throw itemError;
+
+        // Decrement product stock
+        if (selectedProduct) {
+          const newStock = Math.max(0, (selectedProduct.stock || 0) - quantity);
+          await supabase.from("products").update({ stock: newStock }).eq("id", selectedProduct.id);
+        }
       }
 
       return order;
@@ -346,18 +376,22 @@ const Orders = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });
       queryClient.invalidateQueries({ queryKey: ["all-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["products-for-manual-order"] });
       toast.success("تم إنشاء الأوردر بنجاح");
       setManualOrderDialogOpen(false);
       setManualOrder({
+        manualCode: "",
+        manualDate: new Date().toISOString().split('T')[0],
+        accountName: "",
         customerName: "",
         phone: "",
         address: "",
+        productId: "",
         productName: "",
         productPrice: "",
         productSize: "",
         productColor: "",
         productQuantity: "1",
-        shippingCost: "",
         governorateId: ""
       });
     },
@@ -657,11 +691,37 @@ const Orders = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
       <div className="container mx-auto px-4">
+        {!isModerator && (
         <Button onClick={() => navigate("/admin")} variant="ghost" className="mb-4">
           <ArrowLeft className="ml-2 h-4 w-4" />
           الرجوع إلى الصفحة الرئيسية
         </Button>
+        )}
 
+        {isModerator ? (
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                مرحباً <span className="font-bold text-primary">{currentUser?.username}</span> — اضغط على الزر بالأسفل لإضافة أوردر جديد.
+              </p>
+              <Button onClick={() => setManualOrderDialogOpen(true)} className="w-full" size="lg">
+                <Plus className="ml-2 h-5 w-5" />
+                إضافة أوردر جديد
+              </Button>
+              <div className="bg-muted/50 p-3 rounded text-xs text-muted-foreground">
+                <p className="font-bold mb-1">ملاحظات:</p>
+                <ul className="list-disc pr-4 space-y-1">
+                  <li>اكتب سعر المنتج بدون سعر الشحن — الشحن يُحسب تلقائياً من المحافظة</li>
+                  <li>اختر المنتج من القائمة لخصم الكمية تلقائياً من المخزون</li>
+                  <li>الكود اللي بتكتبه هيتسجل ويظهر في كل الجداول</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4">
@@ -817,6 +877,9 @@ const Orders = () => {
                         />
                       </TableHead>
                       <TableHead>رقم الأوردر</TableHead>
+                      <TableHead>الكود</TableHead>
+                      <TableHead>المدريتور</TableHead>
+                      <TableHead>الاكونت</TableHead>
                       <TableHead>المحافظة</TableHead>
                       <TableHead>الاسم</TableHead>
                       <TableHead>الهاتف</TableHead>
@@ -846,6 +909,15 @@ const Orders = () => {
                           </TableCell>
                           <TableCell className="font-mono text-xs">
                             #{order.order_number || order.id.slice(0, 8)}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs font-bold text-primary">
+                            {(order as any).manual_code || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order as any).created_by_username || "-"}
+                          </TableCell>
+                          <TableCell className="text-xs">
+                            {(order as any).account_name || "-"}
                           </TableCell>
                           <TableCell>{order.customers?.governorate || "-"}</TableCell>
                           <TableCell className="font-medium">{order.customers?.name}</TableCell>
@@ -982,6 +1054,7 @@ const Orders = () => {
             )}
           </CardContent>
         </Card>
+        )}
 
         <Dialog open={barcodeDialogOpen} onOpenChange={setBarcodeDialogOpen}>
           <DialogContent className="max-w-2xl">
@@ -1047,11 +1120,37 @@ const Orders = () => {
         <Dialog open={manualOrderDialogOpen} onOpenChange={setManualOrderDialogOpen}>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>إضافة أوردر يدوي</DialogTitle>
+              <DialogTitle>بوابة المدريتور - إضافة أوردر</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>الكود</Label>
+                  <Input
+                    value={manualOrder.manualCode}
+                    onChange={(e) => setManualOrder({ ...manualOrder, manualCode: e.target.value })}
+                    placeholder="مثال: 8532"
+                  />
+                </div>
+                <div>
+                  <Label>التاريخ</Label>
+                  <Input
+                    type="date"
+                    value={manualOrder.manualDate}
+                    onChange={(e) => setManualOrder({ ...manualOrder, manualDate: e.target.value })}
+                  />
+                </div>
+              </div>
               <div>
-                <Label>الاسم (اختياري)</Label>
+                <Label>اسم الاكونت (صفحة السوشيال)</Label>
+                <Input
+                  value={manualOrder.accountName}
+                  onChange={(e) => setManualOrder({ ...manualOrder, accountName: e.target.value })}
+                  placeholder="مثال: احمد النسر"
+                />
+              </div>
+              <div>
+                <Label>اسم العميل</Label>
                 <Input
                   value={manualOrder.customerName}
                   onChange={(e) => setManualOrder({ ...manualOrder, customerName: e.target.value })}
@@ -1059,15 +1158,7 @@ const Orders = () => {
                 />
               </div>
               <div>
-                <Label>رقم الهاتف (اختياري)</Label>
-                <Input
-                  value={manualOrder.phone}
-                  onChange={(e) => setManualOrder({ ...manualOrder, phone: e.target.value })}
-                  placeholder="رقم الهاتف"
-                />
-              </div>
-              <div>
-                <Label>العنوان (اختياري)</Label>
+                <Label>العنوان</Label>
                 <Input
                   value={manualOrder.address}
                   onChange={(e) => setManualOrder({ ...manualOrder, address: e.target.value })}
@@ -1075,17 +1166,18 @@ const Orders = () => {
                 />
               </div>
               <div>
-                <Label>المحافظة</Label>
-                <Select 
-                  value={manualOrder.governorateId} 
-                  onValueChange={(value) => {
-                    const selectedGov = governorates?.find(g => g.id === value);
-                    setManualOrder({ 
-                      ...manualOrder, 
-                      governorateId: value,
-                      shippingCost: selectedGov?.shipping_cost?.toString() || manualOrder.shippingCost
-                    });
-                  }}
+                <Label>رقم التليفون</Label>
+                <Input
+                  value={manualOrder.phone}
+                  onChange={(e) => setManualOrder({ ...manualOrder, phone: e.target.value })}
+                  placeholder="رقم الهاتف"
+                />
+              </div>
+              <div>
+                <Label>المحافظة (الشحن سيُحسب تلقائياً)</Label>
+                <Select
+                  value={manualOrder.governorateId}
+                  onValueChange={(value) => setManualOrder({ ...manualOrder, governorateId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر المحافظة" />
@@ -1099,77 +1191,87 @@ const Orders = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">تفاصيل المنتج</h4>
-                <div className="space-y-3">
-                  <div>
-                    <Label>اسم المنتج</Label>
-                    <Input
-                      value={manualOrder.productName}
-                      onChange={(e) => setManualOrder({ ...manualOrder, productName: e.target.value })}
-                      placeholder="اسم المنتج"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>سعر القطعة *</Label>
-                      <Input
-                        type="number"
-                        value={manualOrder.productPrice}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productPrice: e.target.value })}
-                        placeholder="السعر"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <Label>الكمية *</Label>
-                      <Input
-                        type="number"
-                        value={manualOrder.productQuantity}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
-                        placeholder="1"
-                        min="1"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>المقاس</Label>
-                      <Input
-                        value={manualOrder.productSize}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productSize: e.target.value })}
-                        placeholder="مثل: L, XL, 42"
-                      />
-                    </div>
-                    <div>
-                      <Label>اللون</Label>
-                      <Input
-                        value={manualOrder.productColor}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productColor: e.target.value })}
-                        placeholder="اللون"
-                      />
-                    </div>
-                  </div>
+              <div className="border-t pt-3">
+                <Label>اختر المنتج</Label>
+                <Select
+                  value={manualOrder.productId}
+                  onValueChange={(value) => {
+                    const p = productsList?.find(x => x.id === value);
+                    setManualOrder({
+                      ...manualOrder,
+                      productId: value,
+                      productName: p?.name || "",
+                      productPrice: p?.price?.toString() || manualOrder.productPrice
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المنتج من القائمة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productsList?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} (متوفر: {p.stock})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>سعر المنتج (بدون الشحن)</Label>
+                  <Input
+                    type="number"
+                    value={manualOrder.productPrice}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productPrice: e.target.value })}
+                    placeholder="السعر"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <Label>الكمية</Label>
+                  <Input
+                    type="number"
+                    value={manualOrder.productQuantity}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
+                    placeholder="1"
+                    min="1"
+                  />
                 </div>
               </div>
-              <div>
-                <Label>سعر الشحن (اختياري)</Label>
-                <Input
-                  type="number"
-                  value={manualOrder.shippingCost}
-                  onChange={(e) => setManualOrder({ ...manualOrder, shippingCost: e.target.value })}
-                  placeholder="سعر الشحن"
-                  min="0"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>المقاس (اختياري)</Label>
+                  <Input
+                    value={manualOrder.productSize}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productSize: e.target.value })}
+                    placeholder="L, XL..."
+                  />
+                </div>
+                <div>
+                  <Label>اللون (اختياري)</Label>
+                  <Input
+                    value={manualOrder.productColor}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productColor: e.target.value })}
+                    placeholder="اللون"
+                  />
+                </div>
               </div>
               {manualOrder.productPrice && (
-                <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">
-                    الإجمالي: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1) + (parseFloat(manualOrder.shippingCost) || 0)).toFixed(2)} ج.م
+                <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+                  <p>سعر المنتج: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1)).toFixed(2)} ج.م</p>
+                  <p>سعر الشحن (تلقائي): {(governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0)} ج.م</p>
+                  <p className="font-bold pt-1 border-t">
+                    الإجمالي: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1) + parseFloat((governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0).toString())).toFixed(2)} ج.م
                   </p>
                 </div>
               )}
-              <Button 
+              {currentUser && (
+                <p className="text-xs text-muted-foreground text-center border-t pt-2">
+                  منشئ الأوردر: <span className="font-bold">{currentUser.username}</span>
+                </p>
+              )}
+              <Button
                 onClick={() => {
                   if (!manualOrder.productPrice) {
                     toast.error("يرجى إدخال سعر المنتج");
