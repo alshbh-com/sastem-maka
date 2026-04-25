@@ -37,19 +37,19 @@ const AdminPasswordDialog = ({
 
     setLoading(true);
     try {
-      // Verify admin password from system_passwords
+      // Verify against admin_delete OR the main admin password (so changing admin updates it everywhere)
       const { data, error } = await supabase
         .from("system_passwords")
-        .select("password")
-        .eq("id", "admin_delete")
-        .single();
+        .select("id, password")
+        .in("id", ["admin_delete", "admin"]);
 
       if (error) {
         toast.error("حدث خطأ أثناء التحقق");
         return;
       }
 
-      if (data?.password === password) {
+      const valid = (data || []).some((row: any) => row.password === password);
+      if (valid) {
         toast.success("تم التحقق بنجاح");
         setPassword("");
         onOpenChange(false);
