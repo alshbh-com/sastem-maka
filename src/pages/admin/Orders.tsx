@@ -877,6 +877,9 @@ const Orders = () => {
                         />
                       </TableHead>
                       <TableHead>رقم الأوردر</TableHead>
+                      <TableHead>الكود</TableHead>
+                      <TableHead>المدريتور</TableHead>
+                      <TableHead>الاكونت</TableHead>
                       <TableHead>المحافظة</TableHead>
                       <TableHead>الاسم</TableHead>
                       <TableHead>الهاتف</TableHead>
