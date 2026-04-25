@@ -691,11 +691,37 @@ const Orders = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
       <div className="container mx-auto px-4">
+        {!isModerator && (
         <Button onClick={() => navigate("/admin")} variant="ghost" className="mb-4">
           <ArrowLeft className="ml-2 h-4 w-4" />
           الرجوع إلى الصفحة الرئيسية
         </Button>
+        )}
 
+        {isModerator ? (
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                مرحباً <span className="font-bold text-primary">{currentUser?.username}</span> — اضغط على الزر بالأسفل لإضافة أوردر جديد.
+              </p>
+              <Button onClick={() => setManualOrderDialogOpen(true)} className="w-full" size="lg">
+                <Plus className="ml-2 h-5 w-5" />
+                إضافة أوردر جديد
+              </Button>
+              <div className="bg-muted/50 p-3 rounded text-xs text-muted-foreground">
+                <p className="font-bold mb-1">ملاحظات:</p>
+                <ul className="list-disc pr-4 space-y-1">
+                  <li>اكتب سعر المنتج بدون سعر الشحن — الشحن يُحسب تلقائياً من المحافظة</li>
+                  <li>اختر المنتج من القائمة لخصم الكمية تلقائياً من المخزون</li>
+                  <li>الكود اللي بتكتبه هيتسجل ويظهر في كل الجداول</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
         <Card>
           <CardHeader>
             <div className="flex flex-col gap-4">
