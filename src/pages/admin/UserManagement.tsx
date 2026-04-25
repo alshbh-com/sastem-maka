@@ -441,6 +441,7 @@ const UserManagement = () => {
               <TableHeader>
                 <TableRow>
                   <TableHead>اسم المستخدم</TableHead>
+                  <TableHead>النوع</TableHead>
                   <TableHead>كلمة المرور</TableHead>
                   <TableHead>الصلاحيات</TableHead>
                   <TableHead>الحالة</TableHead>
@@ -451,6 +452,13 @@ const UserManagement = () => {
                 {users?.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell className="font-medium">{user.username}</TableCell>
+                    <TableCell>
+                      {(user as any).role === 'moderator' ? (
+                        <span className="bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 px-2 py-1 rounded text-xs font-medium">مدريتور</span>
+                      ) : (
+                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 px-2 py-1 rounded text-xs font-medium">مدير</span>
+                      )}
+                    </TableCell>
                     <TableCell className="font-mono text-sm">{user.password}</TableCell>
                     <TableCell>
                       <span className="text-sm text-muted-foreground">
