@@ -1843,6 +1843,9 @@ const AgentOrders = () => {
                           />
                         </TableHead>
                         <TableHead>رقم الأوردر</TableHead>
+                        <TableHead>الكود اليدوي</TableHead>
+                        <TableHead>المدريتور</TableHead>
+                        <TableHead>اسم الاكونت</TableHead>
                         <TableHead>العميل</TableHead>
                         <TableHead>الهاتف</TableHead>
                         <TableHead>العنوان</TableHead>
