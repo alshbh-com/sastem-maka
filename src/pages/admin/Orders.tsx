@@ -688,6 +688,48 @@ const Orders = () => {
     return <div className="p-8">جاري التحميل...</div>;
   }
 
+  // Moderator view: only show the manual order entry gate
+  if (isModerator) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
+        <div className="container mx-auto px-4 max-w-2xl">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
+                <Button variant="ghost" size="sm" onClick={() => { useAdminAuth(); }}>
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                مرحباً <span className="font-bold text-primary">{currentUser?.username}</span> — اضغط على الزر بالأسفل لإضافة أوردر جديد.
+              </p>
+              <Button onClick={() => setManualOrderDialogOpen(true)} className="w-full" size="lg">
+                <Plus className="ml-2 h-5 w-5" />
+                إضافة أوردر جديد
+              </Button>
+              <div className="bg-muted/50 p-3 rounded text-xs text-muted-foreground">
+                ملاحظات للمدريتور:
+                <ul className="list-disc pr-4 mt-1 space-y-1">
+                  <li>اكتب سعر المنتج بدون سعر الشحن — الشحن يُحسب تلقائياً من المحافظة</li>
+                  <li>اختر المنتج من القائمة لخصم الكمية تلقائياً من المخزون</li>
+                  <li>الكود اللي بتكتبه هيتسجل ويظهر في كل الجداول</li>
+                </ul>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Manual order dialog reused from below */}
+        </div>
+        {/* Render only the manual order dialog */}
+        <Dialog open={manualOrderDialogOpen} onOpenChange={setManualOrderDialogOpen}>
+          {/* Dialog content is rendered later via the same state below */}
+        </Dialog>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
       <div className="container mx-auto px-4">
