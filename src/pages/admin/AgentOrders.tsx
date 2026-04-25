@@ -1895,14 +1895,30 @@ const AgentOrders = () => {
                             </TableCell>
                             <TableCell className="max-w-[200px]">
                               <div className="space-y-1">
-                                {(order.order_items || []).map((item: any, idx: number) => (
-                                  <div key={idx} className="flex items-center justify-between text-sm gap-2">
-                                    <span className="truncate flex-1">{item.products?.name || "منتج محذوف"}</span>
-                                    <Badge variant="outline" className="shrink-0">
-                                      {item.quantity}
-                                    </Badge>
-                                  </div>
-                                ))}
+                                {(order.order_items || []).map((item: any, idx: number) => {
+                                  // اسم المنتج: من products أولاً، ثم من product_details (للأوردرات اليدوية)
+                                  let productName = item.products?.name;
+                                  if (!productName && item.product_details) {
+                                    try {
+                                      const details = typeof item.product_details === 'string'
+                                        ? JSON.parse(item.product_details)
+                                        : item.product_details;
+                                      productName = details?.name || details?.product_name;
+                                    } catch {
+                                      if (typeof item.product_details === 'string' && item.product_details.trim()) {
+                                        productName = item.product_details;
+                                      }
+                                    }
+                                  }
+                                  return (
+                                    <div key={idx} className="flex items-center justify-between text-sm gap-2">
+                                      <span className="truncate flex-1">{productName || "منتج محذوف"}</span>
+                                      <Badge variant="outline" className="shrink-0">
+                                        {item.quantity}
+                                      </Badge>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </TableCell>
                             <TableCell className="font-bold text-blue-600">
