@@ -1081,11 +1081,37 @@ const Orders = () => {
         <Dialog open={manualOrderDialogOpen} onOpenChange={setManualOrderDialogOpen}>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>إضافة أوردر يدوي</DialogTitle>
+              <DialogTitle>بوابة المدريتور - إضافة أوردر</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>الكود</Label>
+                  <Input
+                    value={manualOrder.manualCode}
+                    onChange={(e) => setManualOrder({ ...manualOrder, manualCode: e.target.value })}
+                    placeholder="مثال: 8532"
+                  />
+                </div>
+                <div>
+                  <Label>التاريخ</Label>
+                  <Input
+                    type="date"
+                    value={manualOrder.manualDate}
+                    onChange={(e) => setManualOrder({ ...manualOrder, manualDate: e.target.value })}
+                  />
+                </div>
+              </div>
               <div>
-                <Label>الاسم (اختياري)</Label>
+                <Label>اسم الاكونت (صفحة السوشيال)</Label>
+                <Input
+                  value={manualOrder.accountName}
+                  onChange={(e) => setManualOrder({ ...manualOrder, accountName: e.target.value })}
+                  placeholder="مثال: احمد النسر"
+                />
+              </div>
+              <div>
+                <Label>اسم العميل</Label>
                 <Input
                   value={manualOrder.customerName}
                   onChange={(e) => setManualOrder({ ...manualOrder, customerName: e.target.value })}
@@ -1093,15 +1119,7 @@ const Orders = () => {
                 />
               </div>
               <div>
-                <Label>رقم الهاتف (اختياري)</Label>
-                <Input
-                  value={manualOrder.phone}
-                  onChange={(e) => setManualOrder({ ...manualOrder, phone: e.target.value })}
-                  placeholder="رقم الهاتف"
-                />
-              </div>
-              <div>
-                <Label>العنوان (اختياري)</Label>
+                <Label>العنوان</Label>
                 <Input
                   value={manualOrder.address}
                   onChange={(e) => setManualOrder({ ...manualOrder, address: e.target.value })}
@@ -1109,17 +1127,18 @@ const Orders = () => {
                 />
               </div>
               <div>
-                <Label>المحافظة</Label>
-                <Select 
-                  value={manualOrder.governorateId} 
-                  onValueChange={(value) => {
-                    const selectedGov = governorates?.find(g => g.id === value);
-                    setManualOrder({ 
-                      ...manualOrder, 
-                      governorateId: value,
-                      shippingCost: selectedGov?.shipping_cost?.toString() || manualOrder.shippingCost
-                    });
-                  }}
+                <Label>رقم التليفون</Label>
+                <Input
+                  value={manualOrder.phone}
+                  onChange={(e) => setManualOrder({ ...manualOrder, phone: e.target.value })}
+                  placeholder="رقم الهاتف"
+                />
+              </div>
+              <div>
+                <Label>المحافظة (الشحن سيُحسب تلقائياً)</Label>
+                <Select
+                  value={manualOrder.governorateId}
+                  onValueChange={(value) => setManualOrder({ ...manualOrder, governorateId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر المحافظة" />
@@ -1133,77 +1152,87 @@ const Orders = () => {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-3">تفاصيل المنتج</h4>
-                <div className="space-y-3">
-                  <div>
-                    <Label>اسم المنتج</Label>
-                    <Input
-                      value={manualOrder.productName}
-                      onChange={(e) => setManualOrder({ ...manualOrder, productName: e.target.value })}
-                      placeholder="اسم المنتج"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>سعر القطعة *</Label>
-                      <Input
-                        type="number"
-                        value={manualOrder.productPrice}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productPrice: e.target.value })}
-                        placeholder="السعر"
-                        min="0"
-                      />
-                    </div>
-                    <div>
-                      <Label>الكمية *</Label>
-                      <Input
-                        type="number"
-                        value={manualOrder.productQuantity}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
-                        placeholder="1"
-                        min="1"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label>المقاس</Label>
-                      <Input
-                        value={manualOrder.productSize}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productSize: e.target.value })}
-                        placeholder="مثل: L, XL, 42"
-                      />
-                    </div>
-                    <div>
-                      <Label>اللون</Label>
-                      <Input
-                        value={manualOrder.productColor}
-                        onChange={(e) => setManualOrder({ ...manualOrder, productColor: e.target.value })}
-                        placeholder="اللون"
-                      />
-                    </div>
-                  </div>
+              <div className="border-t pt-3">
+                <Label>اختر المنتج</Label>
+                <Select
+                  value={manualOrder.productId}
+                  onValueChange={(value) => {
+                    const p = productsList?.find(x => x.id === value);
+                    setManualOrder({
+                      ...manualOrder,
+                      productId: value,
+                      productName: p?.name || "",
+                      productPrice: p?.price?.toString() || manualOrder.productPrice
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المنتج من القائمة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {productsList?.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name} (متوفر: {p.stock})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>سعر المنتج (بدون الشحن)</Label>
+                  <Input
+                    type="number"
+                    value={manualOrder.productPrice}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productPrice: e.target.value })}
+                    placeholder="السعر"
+                    min="0"
+                  />
+                </div>
+                <div>
+                  <Label>الكمية</Label>
+                  <Input
+                    type="number"
+                    value={manualOrder.productQuantity}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productQuantity: e.target.value })}
+                    placeholder="1"
+                    min="1"
+                  />
                 </div>
               </div>
-              <div>
-                <Label>سعر الشحن (اختياري)</Label>
-                <Input
-                  type="number"
-                  value={manualOrder.shippingCost}
-                  onChange={(e) => setManualOrder({ ...manualOrder, shippingCost: e.target.value })}
-                  placeholder="سعر الشحن"
-                  min="0"
-                />
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label>المقاس (اختياري)</Label>
+                  <Input
+                    value={manualOrder.productSize}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productSize: e.target.value })}
+                    placeholder="L, XL..."
+                  />
+                </div>
+                <div>
+                  <Label>اللون (اختياري)</Label>
+                  <Input
+                    value={manualOrder.productColor}
+                    onChange={(e) => setManualOrder({ ...manualOrder, productColor: e.target.value })}
+                    placeholder="اللون"
+                  />
+                </div>
               </div>
               {manualOrder.productPrice && (
-                <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-sm font-medium">
-                    الإجمالي: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1) + (parseFloat(manualOrder.shippingCost) || 0)).toFixed(2)} ج.م
+                <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+                  <p>سعر المنتج: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1)).toFixed(2)} ج.م</p>
+                  <p>سعر الشحن (تلقائي): {(governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0)} ج.م</p>
+                  <p className="font-bold pt-1 border-t">
+                    الإجمالي: {((parseFloat(manualOrder.productPrice) || 0) * (parseInt(manualOrder.productQuantity) || 1) + parseFloat((governorates?.find(g => g.id === manualOrder.governorateId)?.shipping_cost || 0).toString())).toFixed(2)} ج.م
                   </p>
                 </div>
               )}
-              <Button 
+              {currentUser && (
+                <p className="text-xs text-muted-foreground text-center border-t pt-2">
+                  منشئ الأوردر: <span className="font-bold">{currentUser.username}</span>
+                </p>
+              )}
+              <Button
                 onClick={() => {
                   if (!manualOrder.productPrice) {
                     toast.error("يرجى إدخال سعر المنتج");
