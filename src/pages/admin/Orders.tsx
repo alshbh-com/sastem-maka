@@ -688,18 +688,14 @@ const Orders = () => {
     return <div className="p-8">جاري التحميل...</div>;
   }
 
-  // Moderator view: only show the manual order entry gate
+  // Moderator gate: render only the manual order entry UI + the dialog at the bottom
   if (isModerator) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
         <div className="container mx-auto px-4 max-w-2xl">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => { useAdminAuth(); }}>
-                </Button>
-              </div>
+              <CardTitle>بوابة المدريتور - تسجيل أوردر</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <p className="text-sm text-muted-foreground">
@@ -710,8 +706,8 @@ const Orders = () => {
                 إضافة أوردر جديد
               </Button>
               <div className="bg-muted/50 p-3 rounded text-xs text-muted-foreground">
-                ملاحظات للمدريتور:
-                <ul className="list-disc pr-4 mt-1 space-y-1">
+                <p className="font-bold mb-1">ملاحظات:</p>
+                <ul className="list-disc pr-4 space-y-1">
                   <li>اكتب سعر المنتج بدون سعر الشحن — الشحن يُحسب تلقائياً من المحافظة</li>
                   <li>اختر المنتج من القائمة لخصم الكمية تلقائياً من المخزون</li>
                   <li>الكود اللي بتكتبه هيتسجل ويظهر في كل الجداول</li>
@@ -719,16 +715,37 @@ const Orders = () => {
               </div>
             </CardContent>
           </Card>
-
-          {/* Manual order dialog reused from below */}
         </div>
-        {/* Render only the manual order dialog */}
-        <Dialog open={manualOrderDialogOpen} onOpenChange={setManualOrderDialogOpen}>
-          {/* Dialog content is rendered later via the same state below */}
-        </Dialog>
+
+        {/* Manual order dialog (shared) */}
+        <ManualOrderDialogJSX
+          open={manualOrderDialogOpen}
+          onOpenChange={setManualOrderDialogOpen}
+          manualOrder={manualOrder}
+          setManualOrder={setManualOrder}
+          governorates={governorates}
+          productsList={productsList}
+          currentUser={currentUser}
+          createManualOrderMutation={createManualOrderMutation}
+        />
       </div>
     );
   }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
+      <div className="container mx-auto px-4">
+        <Button onClick={() => navigate("/admin")} variant="ghost" className="mb-4">
+          <ArrowLeft className="ml-2 h-4 w-4" />
+          الرجوع إلى الصفحة الرئيسية
+        </Button>
+
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <CardTitle>الأوردرات</CardTitle>
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-accent/20 py-8">
