@@ -26,7 +26,7 @@ const TRANSACTION_REASONS = [
   { value: 'manual', label: 'يدوي' }
 ];
 
-const FALLBACK_ADMIN_PASSWORD = "family";
+// كلمات المرور تُقرأ ديناميكياً من جدول system_passwords (إدارة المستخدمين)
 
 const Cashbox = () => {
   const navigate = useNavigate();
