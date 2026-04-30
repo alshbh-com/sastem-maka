@@ -142,7 +142,7 @@ const Invoices = () => {
       const netAmount = totalPrice - agentShipping;
       
       return {
-        "رقم الأوردر": order.order_number || order.id.slice(0, 8),
+        "رقم الأوردر": order.manual_code || order.order_number || order.id.slice(0, 8),
         "اسم العميل": order.customers?.name || "-",
         "الهاتف": order.customers?.phone || "-",
         "العنوان": order.customers?.address || "-",
@@ -188,7 +188,7 @@ const Invoices = () => {
             <span style="font-size:24px;font-weight:bold;color:#000;letter-spacing:1px;">${brandName}</span>
           </div>
           
-          <div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:7px;border:1.5px solid #000;padding:5px;">فاتورة #${order.order_number || order.id.slice(0, 8)}</div>
+          <div style="text-align:center;font-size:18px;font-weight:bold;margin-bottom:7px;border:1.5px solid #000;padding:5px;">فاتورة #${order.manual_code || order.order_number || order.id.slice(0, 8)}</div>
           
           <div style="font-size:14px;line-height:1.9;margin-bottom:7px;padding:6px;border:1px solid #000;">
             <div><strong>التاريخ:</strong> ${new Date(order.created_at).toLocaleDateString('ar-EG')} &nbsp;&nbsp; <strong>العميل:</strong> ${order.customers?.name}</div>
@@ -441,7 +441,7 @@ const Invoices = () => {
                     />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded">#{order.order_number || order.id.slice(0, 8)}</span>
+                        <span className="text-xs font-mono bg-primary/10 text-primary px-1.5 py-0.5 rounded">#{order.manual_code || order.order_number || order.id.slice(0, 8)}</span>
                         <p className="font-bold">{order.customers?.name}</p>
                         <span className="text-xs px-2 py-0.5 rounded bg-muted">
                           {order.governorates?.name || order.customers?.governorate || "-"}
